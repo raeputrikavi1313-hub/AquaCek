@@ -1,1 +1,323 @@
 
+import streamlit as st
+import pandas as pd
+
+# =========================
+# KONFIGURASI HALAMAN
+# =========================
+st.set_page_config(
+    page_title="Evaluasi Kualitas Air Kelas I",
+    page_icon="💧",
+    layout="wide"
+)
+
+st.markdown("""
+<style>
+
+.stApp {
+    background: linear-gradient(
+        to bottom,
+        #F7FBFC,
+        #EAF4F4
+    );
+}
+
+</style>
+""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+
+/* Metric Card */
+[data-testid="stMetric"] {
+    background-color: white;
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Judul Metric */
+[data-testid="stMetricLabel"] {
+    justify-content: center;
+}
+
+/* Nilai Metric */
+[data-testid="stMetricValue"] {
+    justify-content: center;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="
+background: linear-gradient(
+90deg,
+#5DADE2,
+#85C1E9
+);
+padding:20px;
+border-radius:15px;
+text-align:center;
+color:white;
+">
+<h1>💧 Water Quality Assessment</h1>
+<p>Evaluasi Kualitas Air Kelas I Berdasarkan PP No. 22 Tahun 2021</p>
+</div>
+""", unsafe_allow_html=True)
+st.subheader("Acuan : Peraturan Pemerintah Nomor 22 Tahun 2021")
+st.write(
+    """
+    Aplikasi ini digunakan untuk mengevaluasi kualitas air terhadap
+    baku mutu Air Kelas I (air baku untuk penyediaan air minum).
+    """
+)
+
+st.divider()
+
+# =========================
+# INPUT DATA
+# =========================
+st.header("📋 Input Data Sampel")
+
+nama_sampel = st.text_input(
+    "Nama Sampel",
+    placeholder="Contoh: Sungai Ciliwung Titik 1"
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    ph = st.number_input(
+        "pH",
+        min_value=0.0,
+        max_value=14.0,
+        value=7.0,
+        step=0.1
+    )
+
+    bod = st.number_input(
+        "BOD (mg/L)",
+        min_value=0.0,
+        value=1.0,
+        step=0.1
+    )
+
+    cod = st.number_input(
+        "COD (mg/L)",
+        min_value=0.0,
+        value=5.0,
+        step=0.1
+    )
+
+with col2:
+    do = st.number_input(
+        "DO (mg/L)",
+        min_value=0.0,
+        value=7.0,
+        step=0.1
+    )
+
+    tss = st.number_input(
+        "TSS (mg/L)",
+        min_value=0.0,
+        value=20.0,
+        step=0.1
+    )
+
+    tds = st.number_input(
+        "TDS (mg/L)",
+        min_value=0.0,
+        value=500.0,
+        step=1.0
+    )
+
+# =========================
+# TOMBOL ANALISIS
+# =========================
+if st.button("🔍 Evaluasi Kualitas Air"):
+
+    hasil = []
+
+    # pH
+    status_ph = "✅ Memenuhi" if 6 <= ph <= 9 else "❌ Tidak Memenuhi"
+    hasil.append(["pH", ph, "6 - 9", status_ph])
+
+    # BOD
+    status_bod = "✅ Memenuhi" if bod <= 2 else "❌ Tidak Memenuhi"
+    hasil.append(["BOD", bod, "≤ 2", status_bod])
+
+    # COD
+    status_cod = "✅ Memenuhi" if cod <= 10 else "❌ Tidak Memenuhi"
+    hasil.append(["COD", cod, "≤ 10", status_cod])
+
+    # DO
+    status_do = "✅ Memenuhi" if do >= 6 else "❌ Tidak Memenuhi"
+    hasil.append(["DO", do, "≥ 6", status_do])
+
+    # TSS
+    status_tss = "✅ Memenuhi" if tss <= 40 else "❌ Tidak Memenuhi"
+    hasil.append(["TSS", tss, "≤ 40", status_tss])
+
+    # TDS
+    status_tds = "✅ Memenuhi" if tds <= 1000 else "❌ Tidak Memenuhi"
+    hasil.append(["TDS", tds, "≤ 1000", status_tds])
+
+    # =========================
+    # DATAFRAME HASIL
+    # =========================
+    df = pd.DataFrame(
+        hasil,
+        columns=[
+            "Parameter",
+            "Hasil",
+            "Baku Mutu",
+            "Status"
+        ]
+    )
+
+    df["Hasil"] = df["Hasil"].apply(
+        lambda x: f"{x:.2f}".replace(".", ",")
+    )
+
+    styled_df = (
+        df.style
+        .set_properties(
+            subset=["Parameter"],
+            **{"text-align": "left"}
+        )
+        .set_properties(
+            subset=["Hasil", "Baku Mutu", "Status"],
+            **{"text-align": "center"}
+        )
+    )
+
+    st.divider()
+
+    st.header("📊 Hasil Evaluasi")
+
+    styled_df = (
+    df.style
+    .set_properties(
+        subset=["Parameter"],
+        **{
+            "text-align": "left"
+        }
+    )
+    .set_properties(
+        subset=["Hasil", "Baku Mutu", "Status"],
+        **{
+            "text-align": "center"
+        }
+    )
+    )
+
+    st.table(styled_df)
+
+    # =========================
+    # PERHITUNGAN
+    # =========================
+    jumlah_memenuhi = (
+        df["Status"] == "✅ Memenuhi"
+    ).sum()
+
+    jumlah_tidak = (
+        df["Status"] == "❌ Tidak Memenuhi"
+    ).sum()
+
+    total_parameter = len(df)
+
+    persentase = (
+        jumlah_memenuhi /
+        total_parameter
+    ) * 100
+
+    # =========================
+    # METRIK
+    # =========================
+    st.markdown("""
+    <style>
+    .metric-card {
+        background-color: white;
+        padding: 18px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .metric-title {
+        font-size: 16px;
+        color: #555;
+    }
+
+    .metric-value {
+        font-size: 42px;
+        font-weight: bold;
+        color: #2E4053;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">✅ Memenuhi</div>
+            <div class="metric-value">{jumlah_memenuhi}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">❌ Tidak Memenuhi</div>
+            <div class="metric-value">{jumlah_tidak}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-title">📈 Kepatuhan</div>
+            <div class="metric-value">{persentase:.1f}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # =========================
+    # KESIMPULAN
+    # =========================
+    st.header("📝 Kesimpulan")
+
+    if jumlah_tidak == 0:
+        st.success(
+            f"""
+            Sampel '{nama_sampel}'
+            MEMENUHI Baku Mutu Air Kelas I
+            berdasarkan PP No. 22 Tahun 2021.
+            """
+        )
+    else:
+        st.error(
+            f"""
+            Sampel '{nama_sampel}'
+            TIDAK MEMENUHI Baku Mutu Air Kelas I
+            berdasarkan PP No. 22 Tahun 2021.
+            """
+        )
+
+        gagal = df[
+            df["Status"].str.contains("Tidak")
+        ]["Parameter"].tolist()
+
+        st.warning(
+            "Parameter yang tidak memenuhi : "
+            + ", ".join(gagal)
+        )
+
+    st.divider()
+    st.caption(
+        "AquaCheck | Evaluasi Kualitas Air Kelas I berdasarkan PP No. 22 Tahun 2021"
+    )
